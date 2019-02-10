@@ -3,19 +3,29 @@
 
 #include "PMS7003-Particle-Sensor-Serial.h"
 
-PMS7003Serial<USARTSerial> pms7003(Serial1, D0);
+TODO: PMS7003Serial<USARTSerial> pms7003(Serial1, D0);
 
 void setup() {
   Serial.begin();
 }
 
 unsigned long last = 0;
+unsigned long last_pm_reading = 0;
 
 void loop() {
   unsigned long now = millis();
+
+  // check every time to see if there is data
+  if (pms7003.Read()) {
+    last_pm_reading = now;
+  }
+
   if ((now - last) > 10000) {
-    bool success = pms7003.Read();
-    if (success) {
+    // Let us be generous. Active state the device
+    // reports at least every 2.3 seconds.
+    if ((now - last_pm_reading) > 10000) {
+      Serial.println("No reading for at least 10 seconds!");
+    } else {
       Serial.println("pm1:" + String(pms7003.GetData(pms7003.pm1_0)));
       Serial.println("pm2_5:" + String(pms7003.GetData(pms7003.pm2_5)));
       Serial.println("pm10:" + String(pms7003.GetData(pms7003.pm10)));

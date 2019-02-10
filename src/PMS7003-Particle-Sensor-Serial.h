@@ -23,6 +23,8 @@ public:
   */
   PMS7003Serial(PMS7003UARTSerial& serial, int setpin) : m_serial(serial), m_setpin(setpin) {
     m_serial.template begin(9600,SERIAL_8N1);
+    pinMode(setpin, OUTPUT);
+    pinSetFast(m_setpin);
   }
 
   ~PMS7003Serial() {
@@ -33,7 +35,12 @@ public:
 
   /**
   * Reads true if a new set of particle data has been loaded,
-  * which can then be read using GetData()
+  * which can then be read using GetData(). Because we are using
+  * active mode, this will time out a lot since the device only
+  * transmits at least every 2.3 seconds. What you want to do is
+  * keep track of the last time that you got a true from this
+  * function and then make sure that is within the threshold you
+  * wanted. See the example for how this can be done.
   */
   bool Read() {
     unsigned long start_time = millis();
@@ -45,7 +52,7 @@ public:
     unsigned int checksum = 0;
     unsigned int calc_checksum = 0;
 
-    while ((recieved_bytes < 32) && ((millis() - start_time) < 1000)) {
+    while ((recieved_bytes < 32) && ((millis() - start_time) < 200)) {
       if (m_serial.template available() > 0) {
         last_byte = read_byte;
         read_byte = m_serial.template read();
