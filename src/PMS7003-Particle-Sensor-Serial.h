@@ -43,30 +43,18 @@ public:
   * wanted. See the example for how this can be done.
   */
   bool Read() {
-    unsigned long start_time = millis();
-    unsigned int recieved_bytes = 0;
-
-    unsigned int last_byte = 0;
-    unsigned int read_byte = 0;
-
-    unsigned int checksum = 0;
-    unsigned int calc_checksum = 0;
-
-    while ((recieved_bytes < 32) && ((millis() - start_time) < 200)) {
-      if (m_serial.template available() > 0) {
-        last_byte = read_byte;
-        read_byte = m_serial.template read();
-        if (recieved_bytes < 2) { // looking for the header
-          if (read_byte == 0x42 && recieved_bytes == 0) {
-            calc_checksum += read_byte;
-            recieved_bytes++;
-          } else if (read_byte == 0x4D && recieved_bytes == 1) {
-            calc_checksum += read_byte;
-            recieved_bytes++;
-          }
-        } else if (recieved_bytes < 32) {
-          unsigned int val16 = (last_byte << 8) + read_byte;
-          switch (recieved_bytes) {
+    while (m_serial.template available() > 0) {
+        m_last_byte = m_curr_byte;
+        m_curr_byte = m_serial.template read();
+        if (m_curr_byte == 0x42) {
+            m_calc_checksum = m_curr_byte;
+            m_recieved_bytes = 1;
+        } else if (m_curr_byte == 0x4D && m_recieved_bytes == 1) {
+            m_calc_checksum += m_curr_byte;
+            m_recieved_bytes = 2;
+        } else if (m_recieved_bytes >= 2 &&  m_recieved_bytes < 32) {
+          uint16_t val16 = (m_last_byte << 8) + m_curr_byte;
+          switch (m_recieved_bytes) {
             case 11: // byte number 12
             m_data[pm1_0] = val16;
             break;
@@ -104,20 +92,18 @@ public:
             break;
 
             case 31:
-            checksum = val16;
-            calc_checksum -= last_byte;
-            calc_checksum -= read_byte;
-            break;
+            m_recv_checksum = val16;
+            m_calc_checksum -= m_last_byte;
+            return (m_calc_checksum == m_recv_checksum);
 
             default:
             break;
           }
-          calc_checksum += read_byte;
-          recieved_bytes++;
+          m_calc_checksum += m_curr_byte;
+          m_recieved_bytes++;
         }
-      }
     }
-    return (calc_checksum == checksum);
+    return false;
   }
 
   /**
@@ -140,4 +126,9 @@ private:
   PMS7003UARTSerial& m_serial;
   int m_setpin;
   unsigned int m_data[11];
+  unsigned int m_recieved_bytes;
+  uint16_t m_last_byte;
+  uint16_t m_curr_byte;
+  uint16_t m_recv_checksum;
+  uint16_t m_calc_checksum;
 };

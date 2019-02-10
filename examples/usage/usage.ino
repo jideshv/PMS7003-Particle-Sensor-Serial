@@ -3,7 +3,7 @@
 
 #include "PMS7003-Particle-Sensor-Serial.h"
 
-TODO: PMS7003Serial<USARTSerial> pms7003(Serial1, D0);
+PMS7003Serial<USARTSerial> pms7003(Serial1, D0);
 
 void setup() {
   Serial.begin();
