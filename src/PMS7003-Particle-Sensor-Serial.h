@@ -45,7 +45,7 @@ public:
     unsigned int checksum = 0;
     unsigned int calc_checksum = 0;
 
-    while ((recieved_bytes < 32) && ((millis() - start_time) < 500)) {
+    while ((recieved_bytes < 32) && ((millis() - start_time) < 1000)) {
       if (m_serial.template available() > 0) {
         last_byte = read_byte;
         read_byte = m_serial.template read();
@@ -57,8 +57,7 @@ public:
             calc_checksum += read_byte;
             recieved_bytes++;
           }
-        }
-        else if (recieved_bytes < 32) {
+        } else if (recieved_bytes < 32) {
           unsigned int val16 = (last_byte << 8) + read_byte;
           switch (recieved_bytes) {
             case 11: // byte number 12
